@@ -6,6 +6,11 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='va.css') }}">
 </head>
 <body>
+      <a href = "{{ url_for('hello_world') }}">Home</a>
+      <a href = "{{ url_for('cameras') }}">Камеры</a>
+      <a href = "{{ url_for('files') }}">Файлы</a>
+      <a href = "{{ url_for('start') }}">Детекция</a>
+
     {% block content %}{% endblock %}
 
     <footer>

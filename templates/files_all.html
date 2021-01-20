@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block title %}Все файлы{% endblock %}
+
+{% block content %}
+      {%- for category, message in get_flashed_messages(with_categories = true) %}
+         <div>
+            {{ message }}
+         </div>
+      {%- endfor %}
+
+      <h3>Файлы (<a href = "{{ url_for('file_add') }}">Добавить файл</a>)</h3>
+
+      <table>
+         <thead>
+            <tr>
+               <th>Comment</th>
+               <th>Path</th>
+            </tr>
+         </thead>
+
+         <tbody>
+            {% for cam in list %}
+               <tr>
+                  <td>{{ cam.comment }}</td>
+                  <td>{{ cam.path }}</td>
+               </tr>
+            {% endfor %}
+         </tbody>
+      </table>
+
+{% endblock %}

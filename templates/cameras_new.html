@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% block title %}Добавить камеру{% endblock %}
+
+{% block content %}
+      {%- for category, message in get_flashed_messages(with_categories = true) %}
+         <div class = "alert alert-danger">
+            {{ message }}
+         </div>
+      {%- endfor %}
+
+
+      <form action = "" method = "post">
+         <label for = 'name'>Имя</label><br>
+         <input type = "text" id="name" name = "name" placeholder = "Name" /><br>
+         <label for = "room">Комната</label><br>
+         <input type = "text" id="room" name = "room" placeholder = "room" /><br>
+         <label for = "path">Путь к rtsp</label><br>
+         <textarea name = "path" id="path" placeholder = "path"></textarea><br>
+         <input type = "submit" value = "Submit" />
+      </form>
+{% endblock %}

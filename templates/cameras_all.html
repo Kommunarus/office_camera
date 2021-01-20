@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block title %}Все камеры{% endblock %}
+
+{% block content %}
+      {%- for category, message in get_flashed_messages(with_categories = true) %}
+         <div class = "alert alert-danger">
+            {{ message }}
+         </div>
+      {%- endfor %}
+
+      <h3>Камеры (<a href = "{{ url_for('new_cam') }}">Добавить камеру</a>)</h3>
+
+      <table>
+         <thead>
+            <tr>
+               <th>Name</th>
+               <th>Room</th>
+               <th>Path</th>
+            </tr>
+         </thead>
+
+         <tbody>
+            {% for cam in list %}
+               <tr>
+                  <td>{{ cam.name }}</td>
+                  <td>{{ cam.room }}</td>
+                  <td>{{ cam.path }}</td>
+               </tr>
+            {% endfor %}
+         </tbody>
+      </table>
+
+{% endblock %}

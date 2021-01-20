@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block title %}Добавить файл{% endblock %}
+
+{% block content %}
+      {%- for category, message in get_flashed_messages(with_categories = true) %}
+         <div class = "alert alert-danger">
+            {{ message }}
+         </div>
+      {%- endfor %}
+
+
+      <form action = "" method = "post">
+         <label for = 'comment'>Описание</label><br>
+         <input type = "text" id="comment" name = "comment" placeholder = "Comment" /><br>
+         <label for = "path">Путь в локальной системе</label><br>
+         <textarea name = "path" id="path" placeholder = "path"></textarea><br>
+         <input type = "submit" value = "Submit" />
+      </form>
+{% endblock %}

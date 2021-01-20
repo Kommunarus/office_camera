@@ -2,12 +2,20 @@
 {% block title %}Начало{% endblock %}
 
 {% block content %}
-    <p> Иточник: {{ source }}  </p>
-    <p> Файл: {{ file }}  </p>
-    <p> Поток: {{ flow }}  </p>
+    <p>Выберите источник для анализа</p>
     <form action="" method="post" name=metod_detector>
+        <br>
+        {{ form.hidden_tag() }}
+        {{ form.group_web.label }} {{ form.group_web }}
         <div>
-          <button type="Старт">Submit</button>
+          <button type="submit" name="Web">Web</button>
+        </div>
+        <br>
+        <br>
+        <br>
+        {{ form.group_file.label }} {{ form.group_file }}
+        <div>
+          <button type="submit" name="File">File</button>
         </div>
    </form>
 {% endblock %}

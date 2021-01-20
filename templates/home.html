@@ -3,7 +3,7 @@
 
 {% block content %}
     <h1>Детекция людей. Найдем то что скрыто.</h1>
-    <form action="" method="post" enctype=multipart/form-data>
+    <form action="" method="post">
 <!--        <p>Выберите источник видео:</p>-->
 <!--        <div>-->
 <!--            <input type="radio" id="radioButtonOffLine" value="OffLine" name="source" checked>-->
@@ -19,10 +19,11 @@
 <!--            <label for="video">Выберите потоковое видео</label>-->
 <!--            <input type="text" id="video" name="video" >-->
 <!--        </div>-->
+        <p>Добавьте источник потока (файл или камера) и переходите к детекции</p>
         <div>
-          <button type=submit name="Cameras">Камеры</button>
-          <button type=submit name="Files">Файлы</button>
-          <button type=submit name="Detection">Детекция</button>
+          <button type='submit' name="Cameras">Камеры</button>
+          <button type='submit' name="Files">Файлы</button>
+          <button type='submit' name="Detection">Детекция</button>
         </div>
    </form>
 
