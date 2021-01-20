@@ -305,6 +305,8 @@ def multiDetect(source, device, layer):
         p = Process(target=runDetect, args=(opt, layer))
         p.start()
 
+    return p
+
 
 
     # con.close()

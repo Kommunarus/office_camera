@@ -23,6 +23,9 @@ db = SQLAlchemy(app)
 cache = Cache(config={'CACHE_TYPE': 'redis'})
 cache.init_app(app)
 
+ListProc = {}
+
+
 class Camera(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80))
@@ -109,15 +112,34 @@ def detector():
 
         filename = messages['filename']
         type = messages['form_source']
-        # print(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        # print(os.path.join(appc.config['UPLOAD_FOLDER'], filename))
         if filename != '' and type == 'OffLine':
-            multiDetect(os.path.join(app.config['UPLOAD_FOLDER'], filename), 1, '1')
+            proc = multiDetect(os.path.join(app.config['UPLOAD_FOLDER'], filename), 1, '1')
         if filename != '' and type == 'OnLine':
-            multiDetect(filename, 1, '1')
+            proc = multiDetect(filename, 1, '1')
+
+        if proc != None:
+            ListProc[proc.pid] = proc
+
+            messages['proc'] = proc.pid
+            messages = json.dumps(messages)
+            session['messages'] = messages
 
         return render_template(
             "detector.html"
         )
+    else:
+        messages = session['messages']
+        messages = json.loads(messages)
+        if messages.get('proc'):
+            print('stop process '+str(messages['proc']))
+            proc = ListProc[messages['proc']]
+            del ListProc[messages['proc']]
+            proc.terminate()
+            messages.pop('proc')
+            messages = json.dumps(messages)
+            session['messages'] = messages
+        return redirect(url_for("start"))
 
 
 @app.route('/cameras', methods=['GET', 'POST'])

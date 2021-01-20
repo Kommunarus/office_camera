@@ -2,15 +2,18 @@
 {% block title %}Начало{% endblock %}
 
 {% block content %}
-<h1>ДА!</h1>
-{{ sourc }}
-<img id="img" src="/static/img/detector.jpg" height="360">
-<script type="text/javascript">
-    const img = document.getElementById("img")
+    <h1>ДА!</h1><br>
+    <img id="img" src="/static/img/detector.jpg" height="360"><br>
+    <form method="post" action="">
+        <br><br>
+        <button type='submit' name="Stop">Stop</button>
+    </form>
+    <script type="text/javascript">
+        const img = document.getElementById("img")
 
-    setInterval( () => {
-       img.src = "/static/img/detector.jpg?" + new Date().getTime();
-    }, 5000)
+        setInterval( () => {
+           img.src = "/static/img/detector.jpg?" + new Date().getTime();
+        }, 5000)
 
-</script>
+    </script>
 {% endblock %}
