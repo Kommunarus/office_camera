@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block title %}Начало{% endblock %}
+
+{% block content %}
+    <p> Иточник: {{ source }}  </p>
+    <p> Файл: {{ file }}  </p>
+    <p> Поток: {{ flow }}  </p>
+    <form action="" method="post" name=metod_detector>
+        <div>
+          <button type="Старт">Submit</button>
+        </div>
+   </form>
+{% endblock %}

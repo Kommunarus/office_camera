@@ -1,0 +1,22 @@
+footer {
+    text-align: center;
+}
+
+label {
+  margin-right: 15px;
+  line-height: 32px;
+}
+
+input:checked {
+  border: 6px solid black;
+}
+
+button,
+legend {
+  color: white;
+  background-color: black;
+  padding: 5px 10px;
+  border-radius: 0;
+  border: 0;
+  font-size: 14px;
+}

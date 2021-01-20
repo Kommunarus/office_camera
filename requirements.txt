@@ -1,0 +1,14 @@
+numpy
+opencv-python
+torch
+matplotlib
+flask
+torchvision
+tqdm
+numba
+pandas
+sklearn==0.22.2
+filterpy
+Flask-Caching
+redis
+flask-sqlalchemy
