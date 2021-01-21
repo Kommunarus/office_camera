@@ -13,3 +13,4 @@ Flask-Caching
 redis
 flask-sqlalchemy
 flask_wtf
+pytesseract

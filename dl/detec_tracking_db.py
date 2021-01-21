@@ -4,11 +4,16 @@ from dl.utils.datasets import *
 from dl.utils.utils import *
 # from dl.tracking.sort import *
 #from lstmTracking.track_for_img import  Deep_Tracker
-from dl.time_and_date import *
+# from dl.time_and_date import *
 # import psycopg2
 import uuid
 import argparse
 from multiprocessing import Process
+import pytesseract
+import datetime
+import re
+os.environ['TESSDATA_PREFIX'] = 'other scripts/'
+
 
 # cur.execute(
 #     "DELETE FROM coordinates.base.cam_coordinates"
@@ -79,6 +84,7 @@ def detect(opt, layer, save_img=False):
 
     oldtime = datetime.time(23,59,59)
     olddate = datetime.date(2020,1,1)
+    dtime = datetime.time(0,0,0)
 
     img = torch.zeros((1, 3, img_size, img_size), device=device)  # init img
     _ = model(img.half() if half else img.float()) if device.type != 'cpu' else None  # run once
@@ -93,9 +99,32 @@ def detect(opt, layer, save_img=False):
 
         if lstm_tracker is not None  or datatime == datastart: # or
             # if N_frame % 4 == 0 :
-            datatime = gettime(im0s, name_cam, datastart)
-            date = datatime.date()
-            dtime = datatime.time()
+            # datatime = gettime(im0s, name_cam, datastart)
+            if webcam:  # batch_size >= 1
+                im0 = im0s[0]
+            else:
+                im0 = im0s
+
+            gray = cv2.cvtColor(im0[:80,930:], cv2.COLOR_BGR2GRAY)
+            thresh = 255 - gray
+            ret, thresh = cv2.threshold(thresh, 40, 255, cv2.THRESH_BINARY)
+            thresh = 255 - thresh
+
+            text = pytesseract.image_to_string(thresh,
+                                               config=r'--oem 1 --psm 6', lang="digitsall_layer")
+            text = text.strip()
+            print(text)
+            if text!='':
+                try:
+                    res = re.findall('\w+', text)
+                    if len(res)==6:
+                        datatim = datetime.datetime(int(res[0]), int(res[1]), int(res[2]), int(res[3]), int(res[4]), int(res[5]))
+                        # datatim = datetime.datetime.strptime(text, '%Y-%m-%d %H:%M:%S')
+                        date = datatim.date()
+                        dtime = datatim.time()
+                except:
+                    dtime == datetime.time(0, 0, 0)
+
             if dtime == datetime.time(0, 0, 0):
                 date = olddate
                 dtime = oldtime
@@ -185,7 +214,8 @@ def detect(opt, layer, save_img=False):
                     if save_img or view_img:  # Add bbox to image
                         label = '%s %.2f' % (names[int(cls)], conf)
                         plot_one_box(xyxy, im0, label=label, color=colors[int(cls)], line_thickness = 2)
-                        # print(label)
+
+                        # print(dtime)
 
 
                 # Write results
@@ -221,6 +251,8 @@ def detect(opt, layer, save_img=False):
 
             # Print time (inference + NMS)
             #print('%sDone. (%.3fs)' % (s, t2 - t1))
+            cv2.putText(im0, str(dtime), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, [225, 0, 0],
+                              thickness=2, lineType=cv2.LINE_AA)
 
             # Stream results
             if view_img:

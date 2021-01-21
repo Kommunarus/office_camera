@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-cap = cv2.VideoCapture('rtsp://admin:admin123@192.168.7.35:554/cam/realmonitor?channel=4&subtype=0')
+cap = cv2.VideoCapture('rtsp://admin:admin123@192.168.7.35:554/cam/realmonitor?channel=1&subtype=0')
 
 while(True):
     # Capture frame-by-frame
