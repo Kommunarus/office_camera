@@ -9,7 +9,7 @@ img = cv2.imread('../static/img/detector.jpg')[:80,930:]
 # img = get_grayscale(img)
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 thresh = 255 - gray
-ret, thresh = cv2.threshold(thresh, 40, 250, cv2.THRESH_BINARY)
+ret, thresh = cv2.threshold(thresh, 40 , 250, cv2.THRESH_BINARY)
 thresh = 255 - thresh
 
 # showing the image

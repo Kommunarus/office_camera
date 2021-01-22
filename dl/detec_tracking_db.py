@@ -6,6 +6,7 @@ from dl.utils.utils import *
 #from lstmTracking.track_for_img import  Deep_Tracker
 # from dl.time_and_date import *
 # import psycopg2
+from clickhouse_driver import Client
 import uuid
 import argparse
 from multiprocessing import Process
@@ -13,7 +14,7 @@ import pytesseract
 import datetime
 import re
 os.environ['TESSDATA_PREFIX'] = 'other scripts/'
-
+client = Client(host='localhost')
 
 # cur.execute(
 #     "DELETE FROM coordinates.base.cam_coordinates"
@@ -26,7 +27,7 @@ def detect(opt, layer, save_img=False):
     img_size = (320, 192) if ONNX_EXPORT else opt.img_size  # (320, 192) or (416, 256) or (608, 352) for (height, width)
     out, source, weights, half, view_img, save_txt = opt.output, opt.source, opt.weights, opt.half, opt.view_img, opt.save_txt
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
-    lstm_tracker = None
+    next_step = None
     print(source)
     print(webcam)
 
@@ -97,7 +98,7 @@ def detect(opt, layer, save_img=False):
         if img.ndimension() == 3:
             img = img.unsqueeze(0)
 
-        if lstm_tracker is not None  or datatime == datastart: # or
+        if next_step is not None  or datatime == datastart: # or
             # if N_frame % 4 == 0 :
             # datatime = gettime(im0s, name_cam, datastart)
             if webcam:  # batch_size >= 1
@@ -107,13 +108,13 @@ def detect(opt, layer, save_img=False):
 
             gray = cv2.cvtColor(im0[:80,930:], cv2.COLOR_BGR2GRAY)
             thresh = 255 - gray
-            ret, thresh = cv2.threshold(thresh, 40, 255, cv2.THRESH_BINARY)
+            ret, thresh = cv2.threshold(thresh, 35, 255, cv2.THRESH_BINARY)
             thresh = 255 - thresh
 
             text = pytesseract.image_to_string(thresh,
                                                config=r'--oem 1 --psm 6', lang="digitsall_layer")
             text = text.strip()
-            print(text)
+            # print(text)
             if text!='':
                 try:
                     res = re.findall('\w+', text)
@@ -123,13 +124,14 @@ def detect(opt, layer, save_img=False):
                         date = datatim.date()
                         dtime = datatim.time()
                 except:
-                    dtime == datetime.time(0, 0, 0)
+                    pass
+                    # dtime == datetime.time(0, 0, 0)
 
             if dtime == datetime.time(0, 0, 0):
                 date = olddate
                 dtime = oldtime
 
-        if lstm_tracker is not None and dtime != oldtime and dtime != datetime.time(0,0,0):
+        if next_step is not None and dtime != oldtime and dtime != datetime.time(0,0,0):
             ncadr = -1
             oldtime = dtime
             olddate = date
@@ -163,7 +165,7 @@ def detect(opt, layer, save_img=False):
 
             save_path = str(Path(out) / Path(p).name)
             s += '%gx%g ' % img.shape[2:]  # print string
-
+            number_camer = 100
             if p.find('кассы') != -1:
                 name_cam = 'кассы'
                 number_camer = 1
@@ -203,12 +205,12 @@ def detect(opt, layer, save_img=False):
                     gf = dtime.hour * 10000000 + dtime.minute * 100000 + dtime.second * 1000 + ncadr
 
                     # тут закомментил пока
-                    # cur.execute(
-                    #     f"INSERT INTO coordinates.base.cam_coordinates (x1, y1, x2, y2, camera, t, type_bbox, path_to_bbox, frame, layer, score) \
-                    #     VALUES ({int(xyxy[0])},{int(xyxy[1])}, {int(xyxy[2])}, {int(xyxy[3])}, {int(number_camer)}, \
-                    #     '{datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute, dtime.second, int(1000*ncadr)) }', \
-                    #     '{cls}', '{path_bb}', {gf}, '{layer}', {conf})"
-                    # )
+                    client.execute(
+                        f"INSERT INTO dbDetector.cam_coordinates (x1, y1, x2, y2, camera, t, type_bbox, path_to_bbox, frame, layer, score) \
+                        VALUES ({int(xyxy[0])},{int(xyxy[1])}, {int(xyxy[2])}, {int(xyxy[3])}, {int(number_camer)}, \
+                        '{datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute, dtime.second, int(1000*ncadr)) }', \
+                        '{cls}', '{path_bb}', {gf}, '{layer}', {conf})"
+                    )
                     # con.commit()
 
                     if save_img or view_img:  # Add bbox to image
@@ -218,35 +220,16 @@ def detect(opt, layer, save_img=False):
                         # print(dtime)
 
 
-                # Write results
-                '''for d in trackers:
-                    id = d[0]
-                    d = d[1:5]
-                    #id = int(d[4])
-                    #d = d[0:4]
-                    d = [int(x) for x in d]
-                    cv2.rectangle(im0, (d[0], d[1]), (d[2], d[3]), 255 * colours[id % 32, :], 2)
-                    cv2.putText(im0, '{}'.format(int(id)),
-                                     (d[0] + 2, d[1] + 25),
-                                     cv2.FONT_HERSHEY_COMPLEX, 0.9, (255, 255, 255), 2)
-                    cv2.putText(im0, '{}'.format(N_frame),
-                                (10, 25),
-                                cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
-
-                    cur.execute(
-                        f"INSERT INTO coordinates.base.cam_coordinates (x1, y1, x2, y2, id, camera, data, time, frame) VALUES ({d[0]},{d[1]}, {d[2]}, {d[3]}, {int(id)}, {int(number_camer)}, '{date}', '{dtime}', {int(N_frame)})"
-                    )
-                    con.commit()'''
             if det is None:
                 gf = dtime.hour * 10000000 + dtime.minute * 100000 + dtime.second * 1000 + ncadr
 
                 # тут коммент
-                # cur.execute(
-                #     f"INSERT INTO coordinates.base.cam_coordinates (camera, t, frame, layer) \
-                #     VALUES ( {int(number_camer)}, \
-                #     '{datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute, dtime.second, int(1000 * ncadr))}', \
-                #     {gf}, '{layer}')"
-                # )
+                client.execute(
+                    f"INSERT INTO dbDetector.cam_coordinates (camera, t, frame, layer) \
+                    VALUES ( {int(number_camer)}, \
+                    '{datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute, dtime.second, int(1000 * ncadr))}', \
+                    {gf}, '{layer}')"
+                )
                 # con.commit()
 
             # Print time (inference + NMS)
@@ -262,9 +245,10 @@ def detect(opt, layer, save_img=False):
 
             # Save results (image with detections)
             if save_img:
+                # print(dataset.mode)
                 if dataset.mode == 'images':
-                    pass
-                    #cv2.imwrite(save_path, im0)
+                    next_step = True
+                    cv2.imwrite('static/img/detector.jpg', im0)
                 else:
                     if vid_path != save_path:  # new video
                         vid_path = save_path
@@ -277,9 +261,7 @@ def detect(opt, layer, save_img=False):
                         print(save_path)
                         # vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*opt.fourcc), fps, (w, h))
 
-                        #lstm_tracker = Deep_Tracker(max_iou_distance=0.3, max_age=100, n_init=10)
-                        #lstm_tracker = Sort(max_age = 100)
-                        lstm_tracker = True
+                        next_step = True
                         N_frame = 0
 
                         datastart = datetime.datetime(2020, 1, 1, 0, 0, 0)
@@ -288,6 +270,7 @@ def detect(opt, layer, save_img=False):
                         dtime = None
                         first = True
                         name_cam = ''
+                        number_camer = 100
                         if p.find('кассы') != -1:
                             name_cam = 'кассы'
                             number_camer = 1
@@ -302,7 +285,6 @@ def detect(opt, layer, save_img=False):
                             number_camer = 4
 
                     # vid_writer.write(im0)
-                cv2.imwrite('static/img/detector.jpg', im0)
 
 
     if save_txt or save_img:
@@ -317,21 +299,8 @@ def detect(opt, layer, save_img=False):
     # con.close()
 
 def multiDetect(source, device, layer):
-    # parser = argparse.ArgumentParser()
-    # opt = parser.parse_args()
     opt = paramyolo(source)
 
-    # con = psycopg2.connect(
-    #     database="coordinates",
-    #     user="kommunar",
-    #     password="123",
-    #     host="127.0.0.1",
-    #     port="5432"
-    # )
-    # cur = con.cursor()
-    #
-    # with torch.no_grad():
-    #     detect(opt, con, cur, layer)
     with torch.no_grad():
         # detect(opt, layer)
         p = Process(target=runDetect, args=(opt, layer))

@@ -1,2 +1,25 @@
 sudo apt install tesseract-ocr
 sudo apt-get install libleptonica-dev
+
+sudo mkdir -p /opt/clickhouse/{data,etc,log}
+
+ sudo docker run -d --name clickhouse_1 --ulimit nofile=262144:262144 -v /db/log:/var/log/clickhouse-server -v /db/data:/var/lib/clickhouse yandex/clickhouse-server
+
+ sudo docker run -it --rm --link clickhouse_1:clickhouse-server yandex/clickhouse-client --host clickhouse-server
+
+sudo docker exec -it clickhouse_1 cat /etc/clickhouse-server/config.xml > config.xml
+sudo docker exec -it clickhouse_1 cat /etc/clickhouse-server/users.xml > users.xml
+sudo mv config.xml users.xml
+
+sudo docker stop clickhouse_1
+sudo docker rm clickhouse_1
+sudo docker run -d --restart=always --name clickhouse_1 \
+   --ulimit nofile=262144:262144 \
+   -p 127.0.0.1:8123:8123 -p 127.0.0.1:9000:9000 \
+   -v /home/alex/PycharmProjects/office_camera/db/log:/var/log/clickhouse-server \
+   -v /home/alex/PycharmProjects/office_camera/db/data:/var/lib/clickhouse \
+   yandex/clickhouse-server
+
+sudo docker run -it --rm --link clickhouse_1:clickhouse-server \
+             yandex/clickhouse-client --host clickhouse-server
+
