@@ -2,18 +2,25 @@
 {% block title %}Начало{% endblock %}
 
 {% block content %}
-    <h1>ДА!</h1><br>
-    <img id="img" src="/static/img/detector.jpg" height="360"><br>
-    <form method="post" action="">
-        <br><br>
-        <button type='submit' name="Stop">Stop</button>
+    <h3>Запись</h3><br>
+    <h3>Просмотр</h3><br>
+    <form action="" method="post">
+        {% for select_form in Submit_form_list.Submit_entries %}
+            {{select_form.Submit()}}
+        {% endfor %}
     </form>
-    <script type="text/javascript">
-        const img = document.getElementById("img")
 
-        setInterval( () => {
-           img.src = "/static/img/detector.jpg?" + new Date().getTime();
-        }, 1000)
+<!--    <img id="img" src="/static/img/detector.jpg" height="360"><br>-->
+<!--    <form method="post" action="">-->
+<!--        <br><br>-->
+<!--        <button type='submit' name="Stop">Stop</button>-->
+<!--    </form>-->
+<!--    <script type="text/javascript">-->
+<!--        const img = document.getElementById("img")-->
 
-    </script>
+<!--        setInterval( () => {-->
+<!--           img.src = "/static/img/detector.jpg?" + new Date().getTime();-->
+<!--        }, 2000)-->
+
+<!--    </script>-->
 {% endblock %}

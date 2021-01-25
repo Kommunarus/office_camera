@@ -13,6 +13,7 @@ from multiprocessing import Process
 import pytesseract
 import datetime
 import re
+import os
 os.environ['TESSDATA_PREFIX'] = 'other scripts/'
 client = Client(host='localhost')
 
@@ -22,14 +23,14 @@ client = Client(host='localhost')
 # con.commit()
 
 
-def detect(opt, layer, save_img=False):
+def detect(opt, layer, write_bd=False, show_in_page=False, save_img=False):
     # def detect(opt, con, cur, layer, save_img=False):
     img_size = (320, 192) if ONNX_EXPORT else opt.img_size  # (320, 192) or (416, 256) or (608, 352) for (height, width)
     out, source, weights, half, view_img, save_txt = opt.output, opt.source, opt.weights, opt.half, opt.view_img, opt.save_txt
     webcam = source == '0' or source.startswith('rtsp') or source.startswith('http') or source.endswith('.txt')
     next_step = None
-    print(source)
-    print(webcam)
+    # print(source)
+    # print(webcam)
 
     # Initialize
     device = torch_utils.select_device(device='cpu' if ONNX_EXPORT else opt.device)
@@ -186,32 +187,16 @@ def detect(opt, layer, save_img=False):
                 scale_coords(img.shape[2:], detections_class, im0.shape).round().cpu()
                 # Write results
                 for *xyxy, conf, cls in detections_class:
-                    # out_bbox = os.path.join('storage_box',
-                    #                         str(number_camer),
-                    #                         str(cls.item()),
-                    #                         str(date.year),
-                    #                         str(date.month),
-                    #                         str(date.day),
-                    #                         str(dtime.hour),
-                    #                         str(dtime.minute),
-                    #                         str(dtime.second))
-                    # if not os.path.exists(out_bbox):
-                    #     #shutil.rmtree(out_bbox)  # delete output folder
-                    #     os.makedirs(out_bbox)  # make new output folder
-                    #
-                    # path_bb = os.path.join(out_bbox, '{}.jpg'.format(str(uuid.uuid4())))
-                    # cv2.imwrite(path_bb, im0[int(xyxy[1]):int(xyxy[3]), int(xyxy[0]):int(xyxy[2]), :])
                     path_bb = ''
                     gf = dtime.hour * 10000000 + dtime.minute * 100000 + dtime.second * 1000 + ncadr
 
-                    # тут закомментил пока
-                    client.execute(
-                        f"INSERT INTO dbDetector.cam_coordinates (x1, y1, x2, y2, camera, t, type_bbox, path_to_bbox, frame, layer, score) \
-                        VALUES ({int(xyxy[0])},{int(xyxy[1])}, {int(xyxy[2])}, {int(xyxy[3])}, {int(number_camer)}, \
-                        '{datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute, dtime.second, int(1000*ncadr)) }', \
-                        '{cls}', '{path_bb}', {gf}, '{layer}', {conf})"
-                    )
-                    # con.commit()
+                    if write_bd:
+                        client.execute(
+                            f"INSERT INTO dbDetector.cam_coordinates (x1, y1, x2, y2, camera, t, type_bbox, path_to_bbox, frame, layer, score) \
+                            VALUES ({int(xyxy[0])},{int(xyxy[1])}, {int(xyxy[2])}, {int(xyxy[3])}, {int(number_camer)}, \
+                            '{datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute, dtime.second, int(1000*ncadr)) }', \
+                            '{cls}', '{path_bb}', {gf}, '{layer}', {conf})"
+                        )
 
                     if save_img or view_img:  # Add bbox to image
                         label = '%s %.2f' % (names[int(cls)], conf)
@@ -223,13 +208,13 @@ def detect(opt, layer, save_img=False):
             if det is None:
                 gf = dtime.hour * 10000000 + dtime.minute * 100000 + dtime.second * 1000 + ncadr
 
-                # тут коммент
-                client.execute(
-                    f"INSERT INTO dbDetector.cam_coordinates (camera, t, frame, layer) \
-                    VALUES ( {int(number_camer)}, \
-                    '{datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute, dtime.second, int(1000 * ncadr))}', \
-                    {gf}, '{layer}')"
-                )
+                if write_bd:
+                    client.execute(
+                        f"INSERT INTO dbDetector.cam_coordinates (camera, t, frame, layer) \
+                        VALUES ( {int(number_camer)}, \
+                        '{datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute, dtime.second, int(1000 * ncadr))}', \
+                        {gf}, '{layer}')"
+                    )
                 # con.commit()
 
             # Print time (inference + NMS)
@@ -248,7 +233,8 @@ def detect(opt, layer, save_img=False):
                 # print(dataset.mode)
                 if dataset.mode == 'images':
                     next_step = True
-                    cv2.imwrite('static/img/detector.jpg', im0)
+                    if show_in_page:
+                        cv2.imwrite('static/img/detector_{}.jpg'.format(os.getgid()), im0)
                 else:
                     if vid_path != save_path:  # new video
                         vid_path = save_path
@@ -258,7 +244,7 @@ def detect(opt, layer, save_img=False):
                         fps = vid_cap.get(cv2.CAP_PROP_FPS)
                         w = int(vid_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
                         h = int(vid_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-                        print(save_path)
+                        # print(save_path)
                         # vid_writer = cv2.VideoWriter(save_path, cv2.VideoWriter_fourcc(*opt.fourcc), fps, (w, h))
 
                         next_step = True
@@ -298,12 +284,12 @@ def detect(opt, layer, save_img=False):
     # тут коммент
     # con.close()
 
-def multiDetect(source, device, layer):
+def multiDetect(source, device, layer, write, show):
     opt = paramyolo(source)
 
     with torch.no_grad():
         # detect(opt, layer)
-        p = Process(target=runDetect, args=(opt, layer))
+        p = Process(target=runDetect, args=(opt, layer, write, show))
         p.start()
 
     return p
@@ -311,8 +297,8 @@ def multiDetect(source, device, layer):
 
 
     # con.close()
-def runDetect(opt, layer):
-    detect(opt, layer)
+def runDetect(opt, layer, write, show):
+    detect(opt, layer, write, show)
 
 class paramyolo():
     def __init__(self, source):

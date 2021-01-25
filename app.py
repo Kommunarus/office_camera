@@ -2,13 +2,15 @@ from flask import Flask, request, redirect, url_for, session, flash
 from flask import render_template
 import json
 import os
+import psutil
+import pandas as pd
 from dl.detec_tracking_db import  multiDetect
 from werkzeug.utils import secure_filename
 from flask_caching import Cache
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
-from wtforms import SelectField
-from wtforms.validators import InputRequired
+from wtforms import SelectMultipleField, SubmitField, FieldList, FormField, Label
+import uuid
 
 UPLOAD_FOLDER = './static/uploads'
 
@@ -20,11 +22,29 @@ app.config["CACHE_TYPE"] = "null"
 app.config ['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///cameras.sqlite3'
 db = SQLAlchemy(app)
 
+db.create_all()
+def deleteProc():
+    rows = Process.query.all()
+    for row in rows:
+        try:
+            proc = psutil.Process(int(row.pid))
+            proc.terminate()
+            print('del process {}'.format(row.pid))
+        except:
+            print('Process with pid {} dont terminate'.format(row.pid))
+
+        Process.query.filter_by(pid=row.pid).delete()
+        db.session.commit()
+
+    open('n.txt', 'w').close()
+
+
+
+
 cache = Cache(config={'CACHE_TYPE': 'redis'})
 cache.init_app(app)
 
 ListProc = {}
-
 
 class Camera(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -54,13 +74,32 @@ class Video(db.Model):
         self.path = path
 
 
+class Process(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    pid = db.Column(db.String(100))
+    type = db.Column(db.String(10))
+    path = db.Column(db.String(250))
+
+    def __repr__(self):
+        return '<Process {}>'.format(self.pid)
+
+    def __init__(self, pid, type, path):
+        self.pid = pid
+        self.type = type
+        self.path = path
+
+deleteProc()
+
+
 class ChoiceSourc(FlaskForm):
-    group_web = SelectField('Web')
-    group_file = SelectField('File')
+    group_web = SelectMultipleField('Web')
+    group_file = SelectMultipleField('File')
 
+class SubmitFieldForm(FlaskForm):
+    Submit = SubmitField('SSS')
 
-db.create_all()
-
+class SubmitFieldFormList(FlaskForm):
+    Submit_entries = FieldList(FormField(SubmitFieldForm))
 
 
 @app.route('/', methods=['GET', 'POST'])
@@ -92,55 +131,106 @@ def start():
     else:
         form = ChoiceSourc()
 
-        if'Web' in  request.form:
-            sourc = form.group_web.data.strip()
-            messages = json.dumps({"form_source": 'OnLine', "filename": sourc})
+        if 'Web' in  request.form:
+            sourc = form.group_web.data
+            messages = json.dumps({"form_source": 'OnLine'})
 
         if 'File' in  request.form:
-            sourc = form.group_file.data.strip()
-            messages = json.dumps({"form_source": 'OffLine', "filename": sourc})
+            sourc = form.group_file.data
+            messages = json.dumps({"form_source": 'OffLine'})
 
         session['messages'] = messages
+
+        for i, path in enumerate(sourc):
+            newproc = Process(pid='', type='s', path=path)
+            db.session.add(newproc)
+            db.session.commit()
+
         return redirect(url_for("detector", sourc = sourc))
 
 
 @app.route('/detector', methods=['GET', 'POST'])
 def detector():
+
+
     if request.method == "GET":
+
+        open('n.txt', 'w').close()
+
+        allfile = Process.query.all()
         messages = session['messages']
         messages = json.loads(messages)
 
-        filename = messages['filename']
         type = messages['form_source']
-        # print(os.path.join(appc.config['UPLOAD_FOLDER'], filename))
-        if filename != '' and type == 'OffLine':
-            proc = multiDetect(os.path.join(app.config['UPLOAD_FOLDER'], filename), 1, '1')
-        if filename != '' and type == 'OnLine':
-            proc = multiDetect(filename, 1, '1')
+        with open('n.txt', 'w') as f:
 
-        if proc != None:
-            ListProc[proc.pid] = proc
+            for i, row in enumerate(allfile):
+                if row.pid.strip() == '':
+                    proc = None
+                    if type == 'OffLine':
+                        proc = multiDetect(os.path.join(app.config['UPLOAD_FOLDER'], row.path.srip()), 1, '1', False, False)
+                    else:
+                        proc = multiDetect(row.path.strip(), 1, '1', False, False)
 
-            messages['proc'] = proc.pid
-            messages = json.dumps(messages)
-            session['messages'] = messages
+
+                    if proc != None:
+                        ListProc[proc.pid] = proc
+                        a_proc = Process.query.filter(Process.path == row.path).one()
+                        a_proc.pid = proc.pid
+                        f.write(str(proc.pid)+ "\n")
+
+                        db.session.commit()
+                else:
+                    f.write(str(row.pid) + "\n")
+
+        # form = MultiForm()
+        select_metadata_form_list = SubmitFieldFormList()
+        select_metadata_form_list.Submit_entries = get_select_entries()
+
+        context = {
+            "Submit_form_list": select_metadata_form_list,
+        }
 
         return render_template(
-            "detector.html"
+            "detector.html", **context
         )
     else:
-        messages = session['messages']
-        messages = json.loads(messages)
-        if messages.get('proc'):
-            print('stop process '+str(messages['proc']))
-            proc = ListProc[messages['proc']]
-            del ListProc[messages['proc']]
-            proc.terminate()
-            messages.pop('proc')
-            messages = json.dumps(messages)
-            session['messages'] = messages
-        return redirect(url_for("start"))
+        d = request.form.to_dict()
+        for k, v in d.items():
 
+            if k.find('Submit') > -1:
+                pid = int(k.replace('Submit',''))
+                print(pid)
+                proc = psutil.Process(pid)
+                proc.terminate()
+
+                Process.query.filter_by(pid=pid).delete()
+                db.session.commit()
+                print('kill process {}'.format(pid))
+
+        all_proc = Process.query.all()
+        if len(all_proc)==0:
+            return redirect(url_for("start"))
+        else:
+            return redirect(url_for("detector"))
+
+
+
+def get_select_entries():
+    all_select_items = []
+    if os.path.isfile('n.txt'):
+        with open('n.txt', 'r') as f:
+            reader = f.readlines()
+            for line in reader:
+                print('build form {}'.format(line))
+                select_id = uuid.uuid1()   # allows for multiple selects
+                sub_entry = SubmitFieldForm()
+                sub_entry.Submit.id = 'Submit{}'.format(line)
+                sub_entry.Submit.name = 'Submit{}'.format(line)
+                sub_entry.Submit.label = Label(uuid.uuid1(),line)
+                all_select_items.append(sub_entry)
+
+    return all_select_items
 
 @app.route('/cameras', methods=['GET', 'POST'])
 def cameras():
@@ -149,7 +239,7 @@ def cameras():
             "cameras.html"
         )
     else:
-        if'All' in  request.form:
+        if 'All' in  request.form:
             return render_template('cameras_all.html', list=Camera.query.all())
         if 'Add' in  request.form:
             return redirect(url_for("new_cam"))
@@ -207,3 +297,7 @@ def file_add():
 @app.route('/files_all')
 def files_all():
    return render_template('files_all.html', list = Video.query.all() )
+
+
+if __name__ == '__main__':
+    app.run()
