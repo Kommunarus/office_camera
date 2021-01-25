@@ -168,9 +168,9 @@ def detector():
                 if row.pid.strip() == '':
                     proc = None
                     if type == 'OffLine':
-                        proc = multiDetect(os.path.join(app.config['UPLOAD_FOLDER'], row.path.srip()), 1, '1', False, False)
+                        proc = multiDetect(os.path.join(app.config['UPLOAD_FOLDER'], row.path.srip()), 1, '1', False, True)
                     else:
-                        proc = multiDetect(row.path.strip(), 1, '1', False, False)
+                        proc = multiDetect(row.path.strip(), 1, '1', False, True)
 
 
                     if proc != None:
@@ -186,6 +186,13 @@ def detector():
         # form = MultiForm()
         select_metadata_form_list = SubmitFieldFormList()
         select_metadata_form_list.Submit_entries = get_select_entries()
+
+        all_images = ''
+        with open('n.txt', 'r') as f:
+            reader = f.readlines()
+            for line in reader:
+                all_images += ''
+
 
         context = {
             "Submit_form_list": select_metadata_form_list,
@@ -222,12 +229,13 @@ def get_select_entries():
         with open('n.txt', 'r') as f:
             reader = f.readlines()
             for line in reader:
-                print('build form {}'.format(line))
+                print('build form {}'.format(line.strip()))
                 select_id = uuid.uuid1()   # allows for multiple selects
                 sub_entry = SubmitFieldForm()
-                sub_entry.Submit.id = 'Submit{}'.format(line)
-                sub_entry.Submit.name = 'Submit{}'.format(line)
-                sub_entry.Submit.label = Label(uuid.uuid1(),line)
+                sub_entry.Submit.id = 'Submit{}'.format(line.strip())
+                sub_entry.Submit.name = 'Submit{}'.format(line.strip())
+                sub_entry.Submit.description = 'img/{}.jpg?'.format(line.strip())
+                sub_entry.Submit.label = Label(uuid.uuid1(),line.strip())
                 all_select_items.append(sub_entry)
 
     return all_select_items

@@ -2,25 +2,43 @@
 {% block title %}Начало{% endblock %}
 
 {% block content %}
-    <h3>Запись</h3><br>
-    <h3>Просмотр</h3><br>
-    <form action="" method="post">
-        {% for select_form in Submit_form_list.Submit_entries %}
-            {{select_form.Submit()}}
-        {% endfor %}
-    </form>
+<h3>Запись</h3><br>
+<h3>Просмотр</h3><br>
+<form action="" method="post">
+    {% for select_form in Submit_form_list.Submit_entries %}
+    <br/>
+    <img height="400" id={{ url_for('static', filename=select_form.Submit.name) }}
+    src= {{ url_for('static', filename=select_form.Submit.description) }} >
+    <br/>
+    {{select_form.Submit()}}
+    <br/>
+    {% endfor %}
+</form>
 
 <!--    <img id="img" src="/static/img/detector.jpg" height="360"><br>-->
 <!--    <form method="post" action="">-->
 <!--        <br><br>-->
 <!--        <button type='submit' name="Stop">Stop</button>-->
 <!--    </form>-->
-<!--    <script type="text/javascript">-->
-<!--        const img = document.getElementById("img")-->
 
-<!--        setInterval( () => {-->
-<!--           img.src = "/static/img/detector.jpg?" + new Date().getTime();-->
-<!--        }, 2000)-->
+<script type="text/javascript">
+    var images = document.getElementsByTagName('img');
+    var srcList = [];
+    var imagList = [];
+    for (var i = 0; i < images.length; i++) {
+        var path = images[i].src.substring(0, images[i].src.lastIndexOf("%3F"));
+        srcList.push(path);
+        imagList.push(images[i]);
+    }
 
-<!--    </script>-->
+    function func() {
+        for (var i = 0; i < images.length; i++) {
+            imagList[i].src = srcList[i] + "?" + new Date().getTime();
+        }
+    }
+
+    setInterval(func, 2000)
+</script>
+
+
 {% endblock %}

@@ -1,16 +1,12 @@
-from sys import platform
 from dl.models import *  # set ONNX_EXPORT in models.py
 from dl.utils.datasets import *
 from dl.utils.utils import *
-# from dl.tracking.sort import *
-#from lstmTracking.track_for_img import  Deep_Tracker
-# from dl.time_and_date import *
-# import psycopg2
 from clickhouse_driver import Client
-import uuid
 import argparse
 from multiprocessing import Process
 import pytesseract
+import psutil
+
 import datetime
 import re
 import os
@@ -23,7 +19,7 @@ client = Client(host='localhost')
 # con.commit()
 
 
-def detect(opt, layer, write_bd=False, show_in_page=False, save_img=False):
+def detect(opt, layer, pid, write_bd=False, show_in_page=False, save_img=False):
     # def detect(opt, con, cur, layer, save_img=False):
     img_size = (320, 192) if ONNX_EXPORT else opt.img_size  # (320, 192) or (416, 256) or (608, 352) for (height, width)
     out, source, weights, half, view_img, save_txt = opt.output, opt.source, opt.weights, opt.half, opt.view_img, opt.save_txt
@@ -234,7 +230,7 @@ def detect(opt, layer, write_bd=False, show_in_page=False, save_img=False):
                 if dataset.mode == 'images':
                     next_step = True
                     if show_in_page:
-                        cv2.imwrite('static/img/detector_{}.jpg'.format(os.getgid()), im0)
+                        cv2.imwrite('static/img/{}.jpg'.format(pid), im0)
                 else:
                     if vid_path != save_path:  # new video
                         vid_path = save_path
@@ -298,7 +294,8 @@ def multiDetect(source, device, layer, write, show):
 
     # con.close()
 def runDetect(opt, layer, write, show):
-    detect(opt, layer, write, show)
+    proc = psutil.Process()
+    detect(opt, layer, proc.pid, write, show)
 
 class paramyolo():
     def __init__(self, source):
