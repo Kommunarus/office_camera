@@ -2,29 +2,16 @@
 {% block title %}Видеоаналитика{% endblock %}
 
 {% block content %}
-    <h1>Детекция людей. Найдем то что скрыто.</h1>
-    <form action="" method="post">
-<!--        <p>Выберите источник видео:</p>-->
-<!--        <div>-->
-<!--            <input type="radio" id="radioButtonOffLine" value="OffLine" name="source" checked>-->
-<!--            <label for="radioButtonOffLine">OffLine</label>-->
-<!--            <input type="radio" id="radioButtonOnline" value="OnLine" name="source">-->
-<!--            <label for="radioButtonOnline">OnLine</label>-->
-<!--        </div>-->
-<!--        <div>-->
-<!--            <label for="file">Выберите файл</label>-->
-<!--            <input type="file" id="file" name="file" accept=".mp4, .avi">-->
-<!--        </div>-->
-<!--        <div>-->
-<!--            <label for="video">Выберите потоковое видео</label>-->
-<!--            <input type="text" id="video" name="video" >-->
-<!--        </div>-->
-        <p>Добавьте источник потока (файл или камера) и переходите к детекции</p>
-        <div>
-          <button type='submit' name="Cameras">Камеры</button>
-          <button type='submit' name="Files">Файлы</button>
-          <button type='submit' name="Detection">Детекция</button>
-        </div>
-   </form>
+<h1>Детекция людей. Найдем то что скрыто.</h1>
+<form action="" method="post">
+    <p>Добавьте источник потока (файл или камера) и переходите к детекции</p>
+    <div>
+        <button type='submit' name="Placement">Помещения</button>
+        <!--          <button type='submit' name="Cameras">Камеры</button>-->
+        <button type='submit' name="Files">Файлы</button>
+        <button type='submit' name="Homo">Перевод в глобальные координаты</button>
+        <button type='submit' name="Detection">Детекция</button>
+    </div>
+</form>
 
 {% endblock %}

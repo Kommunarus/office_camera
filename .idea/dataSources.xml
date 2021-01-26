@@ -7,5 +7,11 @@
       <jdbc-driver>ru.yandex.clickhouse.ClickHouseDriver</jdbc-driver>
       <jdbc-url>jdbc:clickhouse://localhost:8123</jdbc-url>
     </data-source>
+    <data-source source="LOCAL" name="cameras2.sqlite3" uuid="2d91de41-4115-497c-ba64-824d0b61bc94">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/cameras2.sqlite3</jdbc-url>
+    </data-source>
   </component>
 </project>

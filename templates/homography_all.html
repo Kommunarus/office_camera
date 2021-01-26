@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% block title %}Гомография{% endblock %}
+
+{% block content %}
+      {%- for category, message in get_flashed_messages(with_categories = true) %}
+         <div class = "alert alert-danger">
+            {{ message }}
+         </div>
+      {%- endfor %}
+
+      <h3>Список координат (<a href = "{{ url_for('new_homography') }}">Добавить запись</a>)</h3>
+
+      <table>
+         <thead>
+            <tr>
+               <th>Камера</th>
+               <th>X камеры</th>
+               <th>Y камеры</th>
+               <th>X помещения</th>
+               <th>Y помещения</th>
+            </tr>
+         </thead>
+
+         <tbody>
+            {% for homo in list %}
+               <tr>
+                  <td>{{ homo.camera_id }}</td>
+                  <td>{{ homo.xloc }}</td>
+                  <td>{{ homo.yloc }}</td>
+                  <td>{{ homo.xglob }}</td>
+                  <td>{{ homo.yglob }}</td>
+               </tr>
+            {% endfor %}
+         </tbody>
+      </table>
+
+{% endblock %}

@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 import re
 os.environ['TESSDATA_PREFIX'] = ''
-img = cv2.imread('../static/img/detector.jpg')[:80,930:]
+img = cv2.imread('../static/img/154635.jpg')[:80,930:]
 
 # img = get_grayscale(img)
 gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)

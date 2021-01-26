@@ -2,12 +2,12 @@
 {% block title %}Начало{% endblock %}
 
 {% block content %}
-<h3>Запись</h3><br>
-<h3>Просмотр</h3><br>
+<!--<h3>Запись</h3><br>-->
+<!--<h3>Просмотр</h3><br>-->
 <form action="" method="post">
     {% for select_form in Submit_form_list.Submit_entries %}
     <br/>
-    <img height="400" id={{ url_for('static', filename=select_form.Submit.name) }}
+    <img height="300" id={{ url_for('static', filename=select_form.Submit.name) }}
     src= {{ url_for('static', filename=select_form.Submit.description) }} >
     <br/>
     {{select_form.Submit()}}
@@ -37,7 +37,7 @@
         }
     }
 
-    setInterval(func, 2000)
+    setInterval(func, 5000)
 </script>
 
 

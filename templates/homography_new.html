@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block title %}Добавить запись для корректировки координат{% endblock %}
+
+{% block content %}
+      {%- for category, message in get_flashed_messages(with_categories = true) %}
+         <div class = "alert alert-danger">
+            {{ message }}
+         </div>
+      {%- endfor %}
+
+
+      <form action = "" method = "post">
+         {{ form.group_web.label }} <br>{{ form.group_web }}<br>
+
+         <label for = "xloc">x loc</label><br>
+         <input type = "number" id="xloc" name = "xloc" placeholder = "xloc" /><br>
+         <label for = "yloc">y loc</label><br>
+         <input type = "number" id="yloc" name = "yloc" placeholder = "yloc" /><br>
+         <label for = "xglob">x glob</label><br>
+         <input type = "number" id="xglob" name = "xglob" placeholder = "xglob" /><br>
+         <label for = "yglob">y glob</label><br>
+         <input type = "number" id="yglob" name = "yglob" placeholder = "yglob" /><br>
+
+         <input type = "submit" value = "Submit" />
+      </form>
+{% endblock %}

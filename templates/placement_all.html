@@ -1,5 +1,5 @@
 {% extends "layout.html" %}
-{% block title %}Все камеры{% endblock %}
+{% block title %}Все помещения{% endblock %}
 
 {% block content %}
       {%- for category, message in get_flashed_messages(with_categories = true) %}
@@ -8,23 +8,23 @@
          </div>
       {%- endfor %}
 
-      <h3>Камеры (<a href = "{{ url_for('new_cam') }}">Добавить камеру</a>)</h3>
+      <h3>
+          Помещения \
+          (<a href = "{{ url_for('new_placement') }}">Добавить помещение</a>)\
+          (<a href = "{{ url_for('new_cam') }}">Добавить камеру</a>)
+      </h3>
 
       <table>
          <thead>
             <tr>
                <th>Name</th>
-               <th>Room</th>
-               <th>Path</th>
             </tr>
          </thead>
 
          <tbody>
-            {% for cam in list %}
+            {% for place in list %}
                <tr>
-                  <td>{{ cam.name }}</td>
-                  <td>{{ cam.placement_id }}</td>
-                  <td>{{ cam.path }}</td>
+                  <td>{{ place.name }}</td>
                </tr>
             {% endfor %}
          </tbody>
