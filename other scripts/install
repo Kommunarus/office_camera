@@ -23,3 +23,19 @@ sudo docker run -d --restart=always --name clickhouse_1 \
 sudo docker run -it --rm --link clickhouse_1:clickhouse-server \
              yandex/clickhouse-client --host clickhouse-server
 
+
+airflow
+pip install apache-airflow
+airflow initdb
+airflow webserver -p 8080
+
+
+airflow  users create \
+--role Admin \
+--username alex \
+--password 111 \
+--email a@a.com \
+--firstname alex \
+--lastname mi
+
+airflow scheduler

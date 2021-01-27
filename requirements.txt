@@ -16,3 +16,4 @@ flask_wtf
 pytesseract
 clickhouse-driver
 psutil
+apache-airflow

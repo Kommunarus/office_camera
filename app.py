@@ -134,13 +134,14 @@ class Process(db.Model):
     path = db.Column(db.String(250))
     gpu = db.Column(db.Integer)
     cam = db.Column(db.String(100))
-    def __init__(self, id, pid, type, path, gpu, cam):
-        self.id = id
+    cam_id = db.Column(db.Integer)
+    def __init__(self, pid, type, path, gpu, cam, cam_id):
         self.pid = pid
         self.type = type
         self.path = path
         self.gpu = gpu
         self.cam = cam
+        self.cam_id = cam_id
 
 
 db.create_all()
@@ -228,7 +229,7 @@ def start():
 
             camera = Camera.query.filter(Camera.path == path).one()
 
-            newproc = Process(pid='', type=type, path=path, gpu='cpu', cam=camera.name)
+            newproc = Process(pid='', type=type, path=path, gpu='cpu', cam=camera.name, cam_id=camera.id)
             db.session.add(newproc)
             db.session.commit()
 
@@ -262,14 +263,15 @@ def detector():
                             usegpu.append(i)
 
                     if type == 'OffLine':
-                        proc = multiDetect(os.path.join(app.config['UPLOAD_FOLDER'], row.path.srip()), 'cpu', '1', False, False, True)
+                        proc = multiDetect(os.path.join(app.config['UPLOAD_FOLDER'], row.path.srip()), 'cpu', 'file',
+                                           '1', False, False, True)
                     else:
                         if row.type == 's':
-                            proc = multiDetect(row.path.strip(), 'cpu', row.cam, False, False, True)
+                            proc = multiDetect(row.path.strip(), 'cpu', row.cam, row.cam_id, False, False, True)
                         if row.type == 'b':
-                            proc = multiDetect(row.path.strip(), gpu, row.cam, False, True, False)
+                            proc = multiDetect(row.path.strip(), gpu, row.cam, row.cam_id, False, True, False)
                         if row.type == 'w':
-                            proc = multiDetect(row.path.strip(), gpu, row.cam, True, False, True)
+                            proc = multiDetect(row.path.strip(), gpu, row.cam, row.cam_id, True, False, True)
 
 
                     if proc != None:

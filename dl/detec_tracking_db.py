@@ -6,7 +6,7 @@ import argparse
 from multiprocessing import Process
 import pytesseract
 import psutil
-
+import uuid
 import datetime
 import re
 import os
@@ -21,7 +21,7 @@ client = Client(host='localhost')
 # con.commit()
 
 
-def detect(opt, layer, pid, write_bd=False, show_in_page_with_box=False, show_in_page_without_box=False,
+def detect(opt, layer, camera_id, pid, write_bd=False, show_in_page_with_box=False, show_in_page_without_box=False,
            save_img=False):
     # def detect(opt, con, cur, layer, save_img=False):
     img_size = (320, 192) if ONNX_EXPORT else opt.img_size  # (320, 192) or (416, 256) or (608, 352) for (height, width)
@@ -174,21 +174,22 @@ def detect(opt, layer, pid, write_bd=False, show_in_page_with_box=False, show_in
 
                         if write_bd:
                             # print(cls)
-                            try:
-                                client.execute(
-                                    "INSERT INTO dbDetector.cam_coordinates (x1, y1, x2, y2, t, type_bbox, layer, score) VALUES ",
-                                    [{'x1': int(xyxy[0]),
-                                      'y1': int(xyxy[1]),
-                                      'x2': int(xyxy[2]),
-                                      'y2': int(xyxy[3]),
-                                      't': datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute,
-                                                             dtime.second, int(1000 * ncadr)),
-                                      'type_bbox':str(cls.cpu().numpy()[0]),
-                                      'layer': layer,
-                                      'score': conf
-                                      }])
-                            except:
-                                pass
+                            client.execute(
+                                "INSERT INTO dbDetector.cam_coordinates \
+                                (x1, y1, x2, y2, t, type_bbox, layer, score, cam_coordinates_id, camera) \
+                                VALUES ",
+                                [{'x1': int(xyxy[0]),
+                                  'y1': int(xyxy[1]),
+                                  'x2': int(xyxy[2]),
+                                  'y2': int(xyxy[3]),
+                                  't': datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute,
+                                                         dtime.second, int(1000 * ncadr)),
+                                  'type_bbox':str(cls.cpu().numpy()),
+                                  'layer': layer,
+                                  'score': conf,
+                                  'cam_coordinates_id':uuid.uuid1(),
+                                  'camera': camera_id,
+                                  }])
 
                         if save_img or view_img:  # Add bbox to image
                             label = '%s %.2f' % (names[int(cls)], conf)
@@ -200,16 +201,16 @@ def detect(opt, layer, pid, write_bd=False, show_in_page_with_box=False, show_in
                     # gf = dtime.hour * 10000000 + dtime.minute * 100000 + dtime.second * 1000 + ncadr
                     # print(datetime.datetime.now())
                     if write_bd:
-                        try:
-                            client.execute(
-                                "INSERT INTO dbDetector.cam_coordinates (t, layer) VALUES",
-                                [{'t': datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute,
-                                                         dtime.second, int(1000 * ncadr)),
-                                  # 'frame':gf,
-                                  'layer': layer}]
-                            )
-                        except:
-                            pass
+                        client.execute(
+                            "INSERT INTO dbDetector.cam_coordinates (t, layer, cam_coordinates_id, camera) VALUES",
+                            [{'t': datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute,
+                                                     dtime.second, int(1000 * ncadr)),
+                              'cam_coordinates_id':uuid.uuid1(),
+                              # 'frame':gf,
+                              'layer': layer,
+                              'camera': camera_id,
+                              }]
+                        )
                     # con.commit()
 
                 # Print time (inference + NMS)
@@ -267,12 +268,12 @@ def detect(opt, layer, pid, write_bd=False, show_in_page_with_box=False, show_in
     # con.close()
 
 
-def multiDetect(source, device, layer, write, showb, showwb):
+def multiDetect(source, device, layer, camera_id, write, showb, showwb):
     opt = paramyolo(source, device)
 
     with torch.no_grad():
         # detect(opt, layer)
-        p = Process(target=runDetect, args=(opt, layer, write, showb, showwb))
+        p = Process(target=runDetect, args=(opt, layer, camera_id, write, showb, showwb))
         p.start()
 
     return p
@@ -280,9 +281,9 @@ def multiDetect(source, device, layer, write, showb, showwb):
     # con.close()
 
 
-def runDetect(opt, layer, write, show_with_box, show_without_box):
+def runDetect(opt, layer, camera_id, write, show_with_box, show_without_box):
     proc = psutil.Process()
-    detect(opt, layer, proc.pid, write, show_with_box, show_without_box)
+    detect(opt, layer, camera_id, proc.pid , write, show_with_box, show_without_box)
 
 
 class paramyolo():
