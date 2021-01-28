@@ -169,26 +169,26 @@ def detect(opt, layer, camera_id, pid, write_bd=False, show_in_page_with_box=Fal
                     scale_coords(img.shape[2:], detections_class, im0.shape).round().cpu()
                     # Write results
                     for *xyxy, conf, cls in detections_class:
-                        path_bb = ''
-                        gf = dtime.hour * 10000000 + dtime.minute * 100000 + dtime.second * 1000 + ncadr
+                        gf = dtime.hour * 10000000 + dtime.minute * 100000 + dtime.second * 100000 + ncadr
 
                         if write_bd:
                             # print(cls)
                             client.execute(
                                 "INSERT INTO dbDetector.cam_coordinates \
-                                (x1, y1, x2, y2, t, type_bbox, layer, score, cam_coordinates_id, camera) \
+                                (x1, y1, x2, y2, t, type_bbox, layer, score, cam_coordinates_id, camera, frame) \
                                 VALUES ",
                                 [{'x1': int(xyxy[0]),
                                   'y1': int(xyxy[1]),
                                   'x2': int(xyxy[2]),
                                   'y2': int(xyxy[3]),
                                   't': datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute,
-                                                         dtime.second, int(1000 * ncadr)),
+                                                         dtime.second, int(100000 * ncadr)),
                                   'type_bbox':str(cls.cpu().numpy()),
                                   'layer': layer,
                                   'score': conf,
                                   'cam_coordinates_id':uuid.uuid1(),
                                   'camera': camera_id,
+                                  'frame':gf,
                                   }])
 
                         if save_img or view_img:  # Add bbox to image
@@ -197,21 +197,20 @@ def detect(opt, layer, camera_id, pid, write_bd=False, show_in_page_with_box=Fal
 
                             # print(dtime)
 
-                if det is None:
-                    # gf = dtime.hour * 10000000 + dtime.minute * 100000 + dtime.second * 1000 + ncadr
-                    # print(datetime.datetime.now())
-                    if write_bd:
-                        client.execute(
-                            "INSERT INTO dbDetector.cam_coordinates (t, layer, cam_coordinates_id, camera) VALUES",
-                            [{'t': datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute,
-                                                     dtime.second, int(1000 * ncadr)),
-                              'cam_coordinates_id':uuid.uuid1(),
-                              # 'frame':gf,
-                              'layer': layer,
-                              'camera': camera_id,
-                              }]
-                        )
-                    # con.commit()
+                # if det is None:
+                #     gf = dtime.hour * 10000000 + dtime.minute * 100000 + dtime.second * 1000 + ncadr
+                #     if write_bd:
+                #         client.execute(
+                #             "INSERT INTO dbDetector.cam_coordinates (t, layer, cam_coordinates_id, camera, frame) VALUES",
+                #             [{'t': datetime.datetime(date.year, date.month, date.day, dtime.hour, dtime.minute,
+                #                                      dtime.second, int(1000 * ncadr)),
+                #               'cam_coordinates_id':uuid.uuid1(),
+                #               # 'frame':gf,
+                #               'layer': layer,
+                #               'camera': camera_id,
+                #               'frame': gf,
+                #               }]
+                #         )
 
                 # Print time (inference + NMS)
                 # print('%sDone. (%.3fs)' % (s, t2 - t1))

@@ -63,8 +63,6 @@ class SimpleBoxTracker(object):
         self.boxShed.append(box[1,:4])
         self.boxBody.append(box[2,:4])
 
-        self.key = []
-        self.key.append(box[:,4])
 
     def update(self, box):
         """
@@ -78,14 +76,17 @@ class SimpleBoxTracker(object):
             self.boxShed.append(box[1,:4])
         if box[2,:4].all() != 0:
             self.boxBody.append(box[2,:4])
-        self.key.append(box[:,4])
 
     def save_bd(self, id_coordinats):
-        for i in range(len(id_coordinats)):
-            if id_coordinats[i] != 0:
+        for uid in id_coordinats:
+            if uid != 0:
                 client.execute(
-                    "INSERT INTO dbDetector.tracking (type_tracker, cam_coordinates_id, id, tracking_id) VALUES ",
-                    [{'type_tracker':'Sort','cam_coordinates_id':id_coordinats[i], 'id':self.id, 'tracking_id':uuid.uuid1()}]
+                    "INSERT INTO dbDetector.tracking (type_tracker, cam_coordinates_id, id, tracking_id, t) VALUES ",
+                    [{'type_tracker':'Sort',
+                      'cam_coordinates_id':uid,
+                      'id':str(self.id),
+                      'tracking_id':uuid.uuid1(),
+                      't':datetime.datetime.now()}]
                 )
 
     def start(self, ):
@@ -168,11 +169,12 @@ class Sort(object):
             trks[t, 1, :4] = boxShed
             trks[t, 2, :4] = boxBody
 
-        udet = np.zeros((len(dets), 3, 5))
+        udet = np.zeros((len(dets), 3, 4))
+        id_det = np.zeros((len(dets), 3), dtype=np.object)
         isEmpty = True
         for t in range(len(dets)):
             cls = dets[t,4]
-            if cls is None:
+            if pd.isna(cls):
                 break
             if cls == '0.0': # shelders
                 w = 1
@@ -181,7 +183,7 @@ class Sort(object):
             if cls == '2.0':  # head
                 w = 2
             udet[t,w,:4] = dets[t,:4]
-            udet[t,w, 4] = dets[t, 5] 
+            id_det[t,w] = dets[t, 5]
             isEmpty = False
 
 
@@ -200,7 +202,7 @@ class Sort(object):
             if (t not in unmatched_trks):
                 d = matched[np.where(matched[:, 1] == t)[0], 0]
                 trk.update(udet[d, :, :][0])
-                trk.save_bd(udet[d, :, 4][0])
+                trk.save_bd(id_det[d, ][0])
 
         # create and initialise new trackers for unmatched detections
         if not (isEmpty==True and len(dets)==1):
@@ -266,31 +268,20 @@ def parse_args():
     return args
 
 
-def get_im_for_key(key_id, con):
-    tab = pd.read_sql(
-        f"select path_to_bbox from coordinates.base.cam_coordinates WHERE key_id = {key_id} ",
-        con=con)
-    orig_det = tab.to_numpy()
-    image_path = orig_det[0, 0]
-    return extract_image_patch(image_path, )
-
-
-def extract_image_patch(image_path, ):
-    # print image_path
-    image_path = '../' + image_path
-    image = cv2.imread(image_path)
-    return image
-
-
 def run_track(num_cam=2, max_age=50, min_hits=10, data = datetime.datetime.now(),
               timeStart = datetime.time(0,0,0), timeEnd = datetime.time(0,0,0)):
     d_start = datetime.datetime.combine(data, timeStart)
     d_end = datetime.datetime.combine(data, timeEnd)
 
     tab = client.execute(
-            f"select frame, x1, y1, x2, y2, type_bbox, key_id from dbDetector.cam_coordinates \
+            f"select t, x1, y1, x2, y2, type_bbox, cam_coordinates_id from dbDetector.cam_coordinates \
             WHERE camera = {num_cam}  and t > '{d_start}' and t <= '{d_end}'\
             ORDER by t ")
+    df_tab = pd.DataFrame(tab, columns=['t', 'x1', 'y1', 'x2', 'y2', 'type_bbox', 'cam_coordinates_id'])
+
+    timeindex = pd.date_range(start=d_start, end=d_end, freq='100L', tz='Europe/Moscow').to_frame()
+
+    result = pd.merge(timeindex, df_tab, how="left", left_on=0, right_on="t")
 
     dtrack = Sort(max_age=max_age, min_hits=min_hits)
     SimpleBoxTracker.count = 1
@@ -299,8 +290,8 @@ def run_track(num_cam=2, max_age=50, min_hits=10, data = datetime.datetime.now()
     oldframe = -1
     listRow = []
     # while index < total_row:
-    for i, row in tab.iterrows():
-        curr_frame = row.frame
+    for i,row in result.iterrows():
+        curr_frame = row[0]
 
         if (curr_frame != oldframe) and oldframe != -1:
             det = np.array(listRow)
@@ -309,7 +300,7 @@ def run_track(num_cam=2, max_age=50, min_hits=10, data = datetime.datetime.now()
             dtrack.update(det)
 
             listRow = []
-        listRow.append(row)
+        listRow.append(row[1:])
         oldframe = curr_frame
 
 
@@ -341,7 +332,7 @@ def delInsideBbox(det):
 
 if __name__ == '__main__':
     for num_cam in [2]:
-        data = datetime.datetime(2020, 3, 13)
-        timeStart = datetime.time(7, 0, 0)
-        timeEnd = datetime.time(23, 0, 0)
+        data = datetime.datetime(2021, 1, 28)
+        timeStart = datetime.time(18, 0, 0)
+        timeEnd = datetime.time(19, 0, 0)
         run_track(num_cam=num_cam, max_age=15, min_hits=1, data=data,timeStart=timeStart,timeEnd=timeEnd)

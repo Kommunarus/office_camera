@@ -36,7 +36,8 @@ res = client.execute("""CREATE TABLE IF NOT EXISTS dbDetector.tracking
     (   tracking_id UUID,
         cam_coordinates_id UUID,
         type_tracker String, 
-        id String
+        t DateTime64(3, 'Europe/Moscow'), 
+       id String
     ) ENGINE = MergeTree()
     ORDER BY tracking_id
     SETTINGS index_granularity = 8192""")
